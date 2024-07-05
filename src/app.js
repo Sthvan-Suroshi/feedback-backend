@@ -6,7 +6,7 @@ const app = express();
 
 app.use(
   cors({
-    origin:"http://localhost:5173",
+    origin: "http://localhost:5173",
     credentials: true,
   }),
 );
@@ -19,9 +19,10 @@ app.use(cookieParser());
 //importing routes
 import userRoutes from "./routes/user.routes.js";
 import imageRoutes from "./routes/imageFeedback.routes.js";
-
+import formRoutes from "./routes/form.routes.js";
 //route declaration
 app.use("/api/v1/users", userRoutes);
-app.use("/api/v1/imageFeedback", imageRoutes);
+app.use("/api/v1/imageFeedbacks", imageRoutes);
+app.use("/api/v1/forms", formRoutes);
 
 export { app };

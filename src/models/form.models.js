@@ -4,6 +4,7 @@ const questionSchema = new mongoose.Schema({
   questionNumber: {
     type: Number,
     required: true,
+    unique: true,
   },
 
   question: {
@@ -42,4 +43,4 @@ const feedbackFormSchema = new mongoose.Schema(
   },
 );
 
-export const FeedBackForm = mongoose.model("FeedbackForm", feedbackFormSchema);
+export const Form = mongoose.model("Form", feedbackFormSchema);

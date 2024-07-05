@@ -129,7 +129,10 @@ export const deleteImageFeedback = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while fetching the response");
   }
 
-  const deletefromCloud = await deleteFromCloudinary(imageResponse.imageUrl,"image");
+  const deletefromCloud = await deleteFromCloudinary(
+    imageResponse.imageUrl,
+    "image",
+  );
 
   if (!deletefromCloud) {
     throw new ApiError("Something went wrong while deleting from cloudinary");
@@ -144,6 +147,63 @@ export const deleteImageFeedback = asyncHandler(async (req, res) => {
         200,
         { deleted: true },
         "Successfully deleted the response",
+      ),
+    );
+});
+
+export const getImageResponse = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!isValidObjectId(id)) {
+    throw new ApiError(400, "Invalid id");
+  }
+
+  const imageResponse = await ImageFeedback.findById(id);
+
+  if (!imageResponse) {
+    throw new ApiError(500, "Something went wrong while fetching the response");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        imageResponse,
+        "Successfully fetched image response",
+      ),
+    );
+});
+
+export const getAllUserImageResponses = asyncHandler(async (req, res) => {
+  const imageResponses = await ImageFeedback.find({ userID: req.user._id });
+
+  if (!imageResponses) {
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching your image response",
+    );
+  }
+  return res.status(200).json(new ApiResponse(200, imageResponses, "Success"));
+});
+
+export const getAllImageResponses = asyncHandler(async (req, res) => {
+  const imageResponses = await ImageFeedback.find();
+
+  if (!imageResponses) {
+    throw new ApiError(
+      500,
+      "Something went wrong while fetching all image response",
+    );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        imageResponses,
+        "Successfully fetched all image responses",
       ),
     );
 });

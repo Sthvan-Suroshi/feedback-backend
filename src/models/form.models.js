@@ -1,24 +1,5 @@
 import mongoose from "mongoose";
 
-const questionSchema = new mongoose.Schema({
-  questionNumber: {
-    type: Number,
-    required: true,
-    unique: true,
-  },
-
-  question: {
-    type: String,
-    required: true,
-  },
-
-  options: [
-    {
-      type: String,
-    },
-  ],
-});
-
 const feedbackFormSchema = new mongoose.Schema(
   {
     createdBy: {
@@ -30,13 +11,20 @@ const feedbackFormSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
+      trim: true,
     },
 
     description: {
       type: String,
+      maxlength: 500,
     },
 
-    questions: [questionSchema],
+    questions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Question",
+      },
+    ],
   },
   {
     timestamps: true,

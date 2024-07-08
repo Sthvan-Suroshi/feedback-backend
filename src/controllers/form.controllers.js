@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { isValidObjectId } from "mongoose";
 import { Question } from "../models/question.models.js";
+import { Feedback } from "../models/feedback.models.js";
 
 export const createForm = asyncHandler(async (req, res) => {
   const { title, description, questions } = req.body;
@@ -145,8 +146,13 @@ export const deleteForm = asyncHandler(async (req, res) => {
 
   const deleteQuestions = await Question.deleteMany({ formId: form._id });
 
-  if (!deleteQuestions) {
-    throw new ApiError(500, "Something went wrong while deleting questions");
+  const deleteResponses = await Feedback.deleteMany({ formId: form._id });
+
+  if (!deleteQuestions || !deleteResponses) {
+    throw new ApiError(
+      500,
+      "Something went wrong while deleting questions and responses",
+    );
   }
 
   const deleteForm = await form.deleteOne();

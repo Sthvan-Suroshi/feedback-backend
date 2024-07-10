@@ -16,7 +16,6 @@ const questionSchema = new mongoose.Schema(
     options: [
       {
         type: String,
-        required: true,
         trim: true,
       },
     ],

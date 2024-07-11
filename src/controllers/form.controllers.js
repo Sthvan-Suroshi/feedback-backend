@@ -8,8 +8,8 @@ import { Feedback } from "../models/feedback.models.js";
 
 export const createForm = asyncHandler(async (req, res) => {
   const { title, description, questions } = req.body;
-
-  if (!title || !description || !questions) {
+  console.log(title, description, questions);
+  if (!title || !description) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -31,6 +31,7 @@ export const createForm = asyncHandler(async (req, res) => {
         const newQuestion = new Question({
           question: q.question,
           options: q.options,
+          description: q.description,
           formId: savedForm._id,
         });
         return await newQuestion.save();

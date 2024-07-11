@@ -19,6 +19,10 @@ const questionSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+
+    description: {
+      type: Boolean,
+    },
   },
   {
     timestamps: true,

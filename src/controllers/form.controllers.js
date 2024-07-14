@@ -8,7 +8,7 @@ import { Feedback } from "../models/feedback.models.js";
 
 export const createForm = asyncHandler(async (req, res) => {
   const { title, description, questions } = req.body;
-  console.log(title, description, questions);
+
   if (!title || !description) {
     throw new ApiError(400, "All fields are required");
   }
@@ -37,7 +37,6 @@ export const createForm = asyncHandler(async (req, res) => {
         return await newQuestion.save();
       }),
     );
-    console.log(newQuestions);
 
     if (!newQuestions) {
       throw new ApiError(500, "Something went wrong while saving questions");
@@ -90,6 +89,17 @@ export const getFormDetails = asyncHandler(async (req, res) => {
     console.log(error);
     throw error;
   }
+});
+
+export const getAllFormsCreatedByUser = asyncHandler(async (req, res) => {
+  const forms = await Form.find({ createdBy: req.user?._id });
+  if (!forms) {
+    throw new ApiError(404, "Forms not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, forms, "Forms retrieved successfully"));
 });
 
 export const updateForm = asyncHandler(async (req, res) => {

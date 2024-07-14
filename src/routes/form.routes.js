@@ -4,6 +4,7 @@ import {
   createForm,
   deleteForm,
   deleteQuestion,
+  getAllFormsCreatedByUser,
   getFormDetails,
   updateForm,
   updateQuestion,
@@ -24,4 +25,6 @@ router
   .route("/question/:questionId")
   .patch(isInstructor, updateQuestion)
   .delete(isInstructor, deleteQuestion);
+
+router.route("/user/all-forms").get(isInstructor, getAllFormsCreatedByUser);
 export default router;

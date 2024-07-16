@@ -1,10 +1,15 @@
 import { Router } from "express";
-import { isInstructor, verifyJWT } from "../middlewares/auth.middlewares.js";
+import {
+  isInstructor,
+  isStudent,
+  verifyJWT,
+} from "../middlewares/auth.middlewares.js";
 import {
   createForm,
   deleteForm,
   deleteQuestion,
   getAllFormsCreatedByUser,
+  getFormByDept,
   getFormDetails,
   updateForm,
   updateQuestion,
@@ -27,4 +32,6 @@ router
   .delete(isInstructor, deleteQuestion);
 
 router.route("/user/all-forms").get(isInstructor, getAllFormsCreatedByUser);
+
+router.route("/department/all-forms").get(isStudent, getFormByDept);
 export default router;

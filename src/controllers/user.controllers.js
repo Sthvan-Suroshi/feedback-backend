@@ -20,11 +20,11 @@ const generateRefreshAndAccessToken = async (userId) => {
 };
 
 export const register = asyncHandler(async (req, res) => {
-  const { fullName, email, password, usn, accountType, department } = req.body;
+  const { fullName, email, password, college_id, accountType, department } = req.body;
   console.log(fullName, email, password, usn, accountType, department);
 
   if (
-    [fullName, email, password, usn, accountType, department].includes(
+    [fullName, email, password, college_id, accountType, department].includes(
       undefined,
     )
   ) {
@@ -32,7 +32,7 @@ export const register = asyncHandler(async (req, res) => {
   }
 
   const existedUser = await User.findOne({
-    $or: [{ usn }, { email }],
+    $or: [{ college_id }, { email }],
   });
 
   if (existedUser) {
@@ -43,7 +43,7 @@ export const register = asyncHandler(async (req, res) => {
     fullName,
     email,
     password,
-    usn,
+    college_id,
     department,
     accountType,
   });

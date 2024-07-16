@@ -7,7 +7,7 @@ import {
 import {
   checkFeedbackSubmission,
   createFeedback,
-} from "../controllers/feedback.controller";
+} from "../controllers/feedback.controller.js";
 
 const router = Router();
 router.use(verifyJWT);

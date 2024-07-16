@@ -20,9 +20,11 @@ app.use(cookieParser());
 import userRoutes from "./routes/user.routes.js";
 import imageRoutes from "./routes/imageFeedback.routes.js";
 import formRoutes from "./routes/form.routes.js";
+import feedbackRoutes from "./routes/feedback.routes.js"
 //route declaration
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/imageFeedbacks", imageRoutes);
 app.use("/api/v1/forms", formRoutes);
+app.use("/api/v1/feedbacks", feedbackRoutes);
 
 export { app };

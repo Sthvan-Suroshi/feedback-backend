@@ -61,34 +61,28 @@ export const createForm = asyncHandler(async (req, res) => {
 
 export const getFormDetails = asyncHandler(async (req, res) => {
   const { formId } = req.params;
-
   if (!formId) {
     throw new ApiError(400, "Form ID is required");
   }
 
-  try {
-    const form = await Form.findById(formId).populate({
-      path: "questions",
-      select: "_id formId question options",
-    });
+  const form = await Form.findById(formId).populate({
+    path: "questions",
+    select: "_id formId question options description",
+  });
 
-    if (!form) {
-      throw new ApiError(404, "Form not found");
-    }
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          form,
-          "Form and its questions retrieved successfully",
-        ),
-      );
-  } catch (error) {
-    console.log(error);
-    throw error;
+  if (!form) {
+    throw new ApiError(404, "Form not found");
   }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        form,
+        "Form and its questions retrieved successfully",
+      ),
+    );
 });
 
 export const getAllFormsCreatedByUser = asyncHandler(async (req, res) => {
@@ -140,6 +134,31 @@ export const updateForm = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, updatedForm, "Form updated successfully"));
+});
+
+export const getFormByDept = asyncHandler(async (req, res) => {
+  const department = req.user.department;
+
+  console.log(department);
+
+  // Fetch all forms and populate the createdBy field
+  const forms = await Form.find().populate({
+    path: "createdBy",
+    select: "department",
+  });
+
+  if (!forms) {
+    throw new ApiError(404, "Forms not found");
+  }
+
+  // Filter out forms where the instructor's department does not match the student's department
+  const filteredForms = forms.filter(
+    (form) => form.createdBy && form.createdBy.department === department,
+  );
+
+  console.log(filteredForms);
+
+  return res.status(200).json(new ApiResponse(200, filteredForms, "Success"));
 });
 
 export const deleteForm = asyncHandler(async (req, res) => {

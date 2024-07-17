@@ -7,6 +7,7 @@ import {
 import {
   checkFeedbackSubmission,
   createFeedback,
+  getAllFeedbacksToForm,
 } from "../controllers/feedback.controller.js";
 
 const router = Router();
@@ -16,8 +17,6 @@ router.route("/response/:formId").post(isStudent, createFeedback);
 
 router.route("/exists/:formId").get(isStudent, checkFeedbackSubmission);
 
-router
-  .route("/all/feedback/:formId")
-  .get(isInstructor, checkFeedbackSubmission);
+router.route("/all/response/:formId").get(isInstructor, getAllFeedbacksToForm);
 
 export default router;

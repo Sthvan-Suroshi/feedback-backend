@@ -8,6 +8,9 @@ import { Form } from "../models/form.models.js";
 export const createFeedback = asyncHandler(async (req, res) => {
   const { responses } = req.body;
   const { formId } = req.params;
+  console.log(responses);
+
+  console.log(formId);
 
   if (!formId || !responses || !Array.isArray(responses)) {
     throw new ApiError(400, "Form ID and responses are required");

@@ -13,7 +13,7 @@ const responseSchema = new mongoose.Schema({
 
 const feedbackSchema = new mongoose.Schema(
   {
-    formID: {
+    formId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "FeedbackForm",
       required: true,

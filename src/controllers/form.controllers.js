@@ -138,27 +138,37 @@ export const updateForm = asyncHandler(async (req, res) => {
 
 export const getFormByDept = asyncHandler(async (req, res) => {
   const department = req.user.department;
+  const userID = req.user._id;
+  const [forms, feedbacks] = await Promise.all([
+    Form.find().populate({
+      path: "createdBy",
+      select: "department fullName",
+    }),
+    Feedback.find({ userID }).select("formId"),
+  ]);
 
-  console.log(department);
-
-  // Fetch all forms and populate the createdBy field
-  const forms = await Form.find().populate({
-    path: "createdBy",
-    select: "department",
-  });
-
-  if (!forms) {
+  if (!forms || forms.length === 0) {
     throw new ApiError(404, "Forms not found");
   }
 
-  // Filter out forms where the instructor's department does not match the student's department
-  const filteredForms = forms.filter(
-    (form) => form.createdBy && form.createdBy.department === department,
+  
+  const submittedFormIDs = new Set(
+    feedbacks.map((feedback) => feedback.formId.toString()),
   );
+  const formsWithSubmissionStatus = forms
+    .filter(
+      (form) => form.createdBy && form.createdBy.department === department,
+    )
+    .map((form) => ({
+      ...form._doc,
+      submitted: submittedFormIDs.has(form._id.toString()),
+      createdBy: form.createdBy.fullName,
+    }));
 
-  console.log(filteredForms);
 
-  return res.status(200).json(new ApiResponse(200, filteredForms, "Success"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, formsWithSubmissionStatus, "Success"));
 });
 
 export const deleteForm = asyncHandler(async (req, res) => {
@@ -206,7 +216,7 @@ export const updateQuestion = asyncHandler(async (req, res) => {
   const { questionId } = req.params;
   const { question, options } = req.body;
 
-  if (!question || !options) {
+  if (!question) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -242,6 +252,7 @@ export const updateQuestion = asyncHandler(async (req, res) => {
 
 export const deleteQuestion = asyncHandler(async (req, res) => {
   const { questionId } = req.params;
+  console.log(questionId);
 
   if (!questionId) {
     throw new ApiError(400, "Question ID is required");

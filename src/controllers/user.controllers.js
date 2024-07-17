@@ -20,8 +20,9 @@ const generateRefreshAndAccessToken = async (userId) => {
 };
 
 export const register = asyncHandler(async (req, res) => {
-  const { fullName, email, password, college_id, accountType, department } = req.body;
-  console.log(fullName, email, password, usn, accountType, department);
+  const { fullName, email, password, college_id, accountType, department } =
+    req.body;
+  console.log(fullName, email, password, college_id, accountType, department);
 
   if (
     [fullName, email, password, college_id, accountType, department].includes(

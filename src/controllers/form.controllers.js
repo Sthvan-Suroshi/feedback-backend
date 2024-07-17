@@ -151,7 +151,6 @@ export const getFormByDept = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Forms not found");
   }
 
-  
   const submittedFormIDs = new Set(
     feedbacks.map((feedback) => feedback.formId.toString()),
   );
@@ -164,7 +163,6 @@ export const getFormByDept = asyncHandler(async (req, res) => {
       submitted: submittedFormIDs.has(form._id.toString()),
       createdBy: form.createdBy.fullName,
     }));
-
 
   return res
     .status(200)
@@ -295,4 +293,11 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
     console.log(error);
     throw error;
   }
+});
+
+export const getAllForms = asyncHandler(async (req, res) => {
+  const forms = await Form.find();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, forms, "All forms retrieved successfully"));
 });

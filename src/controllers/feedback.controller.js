@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import mongoose, { isValidObjectId } from "mongoose";
 import { Feedback } from "../models/feedback.models.js";
 import { Form } from "../models/form.models.js";
-import { Question } from "../models/question.models.js";
+
 export const createFeedback = asyncHandler(async (req, res) => {
   const { responses } = req.body;
   const { formId } = req.params;
@@ -71,7 +71,7 @@ export const checkFeedbackSubmission = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, { submitted: true }, "Submitted already"));
-});
+}); 
 
 export const getAllFeedbacksToForm = asyncHandler(async (req, res) => {
   const { formId } = req.params;

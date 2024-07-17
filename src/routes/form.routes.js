@@ -1,5 +1,7 @@
 import { Router } from "express";
 import {
+  isAdmin,
+  isAdminOrInstructor,
   isInstructor,
   isStudent,
   verifyJWT,
@@ -8,6 +10,7 @@ import {
   createForm,
   deleteForm,
   deleteQuestion,
+  getAllForms,
   getAllFormsCreatedByUser,
   getFormByDept,
   getFormDetails,
@@ -23,15 +26,17 @@ router.route("/").post(isInstructor, createForm);
 router
   .route("/:formId")
   .get(getFormDetails)
-  .patch(isInstructor, updateForm)
-  .delete(isInstructor, deleteForm); //needs testing
+  .patch(isAdminOrInstructor, updateForm)
+  .delete(isAdminOrInstructor, deleteForm);
 
 router
   .route("/question/:questionId")
-  .patch(isInstructor, updateQuestion)
-  .delete(isInstructor, deleteQuestion);
+  .patch(isAdminOrInstructor, updateQuestion)
+  .delete(isAdminOrInstructor, deleteQuestion);
 
 router.route("/user/all-forms").get(isInstructor, getAllFormsCreatedByUser);
 
 router.route("/department/all-forms").get(isStudent, getFormByDept);
+router.route("/admin/all-forms").get(isAdmin, getAllForms);
+
 export default router;

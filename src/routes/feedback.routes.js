@@ -17,6 +17,6 @@ router.route("/response/:formId").post(isStudent, createFeedback);
 
 router.route("/exists/:formId").get(isStudent, checkFeedbackSubmission);
 
-router.route("/all/response/:formId").get(isInstructor, getAllFeedbacksToForm);
+router.route("/all/response/:formId").get(getAllFeedbacksToForm);
 
 export default router;

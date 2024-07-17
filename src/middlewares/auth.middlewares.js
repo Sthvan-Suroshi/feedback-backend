@@ -51,3 +51,13 @@ export const isInstructor = asyncHandler(async (req, _, next) => {
   }
   next();
 });
+
+export const isAdminOrInstructor = asyncHandler(async (req, _, next) => {
+  if (
+    req.user?.accountType !== "admin" &&
+    req.user?.accountType !== "instructor"
+  ) {
+    throw new ApiError(401, "Unauthorized request to admin or instructor");
+  }
+  next();
+});

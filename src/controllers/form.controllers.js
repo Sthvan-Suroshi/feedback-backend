@@ -86,7 +86,9 @@ export const getFormDetails = asyncHandler(async (req, res) => {
 });
 
 export const getAllFormsCreatedByUser = asyncHandler(async (req, res) => {
-  const forms = await Form.find({ createdBy: req.user?._id });
+  const forms = await Form.find({ createdBy: req.user?._id }).sort({
+    createdAt: -1,
+  });
   if (!forms) {
     throw new ApiError(404, "Forms not found");
   }
@@ -139,8 +141,9 @@ export const updateForm = asyncHandler(async (req, res) => {
 export const getFormByDept = asyncHandler(async (req, res) => {
   const department = req.user.department;
   const userID = req.user._id;
+
   const [forms, feedbacks] = await Promise.all([
-    Form.find().populate({
+    Form.find().sort({ createdAt: -1 }).populate({
       path: "createdBy",
       select: "department fullName",
     }),
@@ -154,6 +157,7 @@ export const getFormByDept = asyncHandler(async (req, res) => {
   const submittedFormIDs = new Set(
     feedbacks.map((feedback) => feedback.formId.toString()),
   );
+
   const formsWithSubmissionStatus = forms
     .filter(
       (form) => form.createdBy && form.createdBy.department === department,
@@ -296,7 +300,7 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
 });
 
 export const getAllForms = asyncHandler(async (req, res) => {
-  const forms = await Form.find();
+  const forms = await Form.find().sort({ createdAt: -1 });
   return res
     .status(200)
     .json(new ApiResponse(200, forms, "All forms retrieved successfully"));

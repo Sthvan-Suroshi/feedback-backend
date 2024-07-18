@@ -176,7 +176,9 @@ export const getImageResponse = asyncHandler(async (req, res) => {
 });
 
 export const getAllUserImageResponses = asyncHandler(async (req, res) => {
-  const imageResponses = await ImageFeedback.find({ userID: req.user._id });
+  const imageResponses = await ImageFeedback.find({
+    userID: req.user._id,
+  }).sort({ createdAt: -1 });
 
   if (!imageResponses) {
     throw new ApiError(
@@ -188,7 +190,7 @@ export const getAllUserImageResponses = asyncHandler(async (req, res) => {
 });
 
 export const getAllImageResponses = asyncHandler(async (req, res) => {
-  const imageResponses = await ImageFeedback.find();
+  const imageResponses = await ImageFeedback.find().sort({ createdAt: -1 });
 
   if (!imageResponses) {
     throw new ApiError(

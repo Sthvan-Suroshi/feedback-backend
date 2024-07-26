@@ -143,7 +143,7 @@ export const getFormByDept = asyncHandler(async (req, res) => {
   const userID = req.user._id;
 
   const [forms, feedbacks] = await Promise.all([
-    Form.find().sort({ createdAt: -1 }).populate({
+    Form.find({ isPublished: true }).sort({ createdAt: -1 }).populate({
       path: "createdBy",
       select: "department fullName",
     }),
@@ -151,7 +151,7 @@ export const getFormByDept = asyncHandler(async (req, res) => {
   ]);
 
   if (!forms || forms.length === 0) {
-    throw new ApiError(404, "Forms not found");
+    return res.status(200).json(new ApiResponse(200, [], "Success"));
   }
 
   const submittedFormIDs = new Set(
@@ -171,6 +171,40 @@ export const getFormByDept = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, formsWithSubmissionStatus, "Success"));
+});
+
+export const togglePublish = asyncHandler(async (req, res) => {
+  const { isPublished, formId } = req.body;
+  if (!formId) {
+    throw new ApiError(400, "Form ID is required");
+  }
+
+  if (!isValidObjectId(formId)) {
+    throw new ApiError(400, "Invalid form ID");
+  }
+
+  const form = await Form.findById(formId);
+  if (!form) {
+    throw new ApiError(404, "Form not found");
+  }
+
+  if (form.createdBy.toString() !== req.user?._id.toString()) {
+    throw new ApiError(403, "You are not authorized to publish this form");
+  }
+
+  const updatedForm = await Form.findByIdAndUpdate(
+    formId,
+    { isPublished },
+    { new: true, runValidators: true },
+  );
+
+  if (!updatedForm) {
+    throw new ApiError(500, "Something went wrong while updating the form");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedForm, "Form published successfully"));
 });
 
 export const deleteForm = asyncHandler(async (req, res) => {

@@ -14,6 +14,7 @@ import {
   getAllFormsCreatedByUser,
   getFormByDept,
   getFormDetails,
+  togglePublish,
   updateForm,
   updateQuestion,
 } from "../controllers/form.controllers.js";
@@ -38,5 +39,6 @@ router.route("/user/all-forms").get(isInstructor, getAllFormsCreatedByUser);
 
 router.route("/department/all-forms").get(isStudent, getFormByDept);
 router.route("/admin/all-forms").get(isAdmin, getAllForms);
+router.route("/your-forms/toggle-publish").patch(isAdminOrInstructor, togglePublish);
 
 export default router;

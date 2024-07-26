@@ -26,6 +26,7 @@ export const createImageFeedback = asyncHandler(async (req, res) => {
   }
 
   const imageUrl = await uploadOnCloudinary(imageLocalPath);
+  console.log(imageUrl);
 
   if (!imageUrl) {
     throw new ApiError(

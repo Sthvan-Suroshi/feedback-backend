@@ -25,6 +25,11 @@ const feedbackFormSchema = new mongoose.Schema(
         ref: "Question",
       },
     ],
+
+    isPublished: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

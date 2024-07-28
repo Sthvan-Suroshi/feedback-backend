@@ -2,7 +2,9 @@
 
 ## Schema
 
-![demo](<image.png>)
+![demo](image.png)
+
+**Code Link:** https://github.com/Sthvan-Suroshi/feedback-frontend
 
 ## User Routes
 

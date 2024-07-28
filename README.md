@@ -2,7 +2,7 @@
 
 ## Schema
 
-![demo][Schema Diagram](image.png)
+![demo](<image.png>)
 
 ## User Routes
 

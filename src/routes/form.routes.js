@@ -4,7 +4,7 @@ import {
   isAdminOrInstructor,
   isInstructor,
   isStudent,
-  verifyJWT,
+  verifyJWT
 } from "../middlewares/auth.middlewares.js";
 import {
   createForm,
@@ -16,7 +16,7 @@ import {
   getFormDetails,
   togglePublish,
   updateForm,
-  updateQuestion,
+  updateQuestion
 } from "../controllers/form.controllers.js";
 
 const router = Router();

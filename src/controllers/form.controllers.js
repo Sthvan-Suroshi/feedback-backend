@@ -7,9 +7,9 @@ import { Question } from "../models/question.models.js";
 import { Feedback } from "../models/feedback.models.js";
 
 export const createForm = asyncHandler(async (req, res) => {
-  const { title, description, questions } = req.body;
+  const { title, description, questions, academicYear } = req.body;
 
-  if (!title || !description) {
+  if (!title || !description || academicYear) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -18,6 +18,7 @@ export const createForm = asyncHandler(async (req, res) => {
       createdBy: req.user?._id,
       title,
       description,
+      academicYear
     });
 
     const savedForm = await form.save();
@@ -32,10 +33,10 @@ export const createForm = asyncHandler(async (req, res) => {
           question: q.question,
           options: q.options,
           description: q.description,
-          formId: savedForm._id,
+          formId: savedForm._id
         });
         return await newQuestion.save();
-      }),
+      })
     );
 
     if (!newQuestions) {
@@ -46,10 +47,7 @@ export const createForm = asyncHandler(async (req, res) => {
     const updatedForm = await savedForm.save();
 
     if (!updatedForm) {
-      throw new ApiError(
-        500,
-        "Something went wrong while updating the form with questions",
-      );
+      throw new ApiError(500, "Something went wrong while updating the form with questions");
     }
 
     return res.status(200).json(new ApiResponse(200, updatedForm, "Success"));
@@ -67,7 +65,7 @@ export const getFormDetails = asyncHandler(async (req, res) => {
 
   const form = await Form.findById(formId).populate({
     path: "questions",
-    select: "_id formId question options description",
+    select: "_id formId question options description"
   });
 
   if (!form) {
@@ -76,26 +74,18 @@ export const getFormDetails = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        form,
-        "Form and its questions retrieved successfully",
-      ),
-    );
+    .json(new ApiResponse(200, form, "Form and its questions retrieved successfully"));
 });
 
 export const getAllFormsCreatedByUser = asyncHandler(async (req, res) => {
   const forms = await Form.find({ createdBy: req.user?._id }).sort({
-    createdAt: -1,
+    createdAt: -1
   });
   if (!forms) {
     throw new ApiError(404, "Forms not found");
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, forms, "Forms retrieved successfully"));
+  return res.status(200).json(new ApiResponse(200, forms, "Forms retrieved successfully"));
 });
 
 export const updateForm = asyncHandler(async (req, res) => {
@@ -106,12 +96,8 @@ export const updateForm = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  if (!formId) {
-    throw new ApiError(400, "Form ID is required");
-  }
-
-  if (!isValidObjectId(formId)) {
-    throw new ApiError(400, "Invalid form ID");
+  if (!formId || !isValidObjectId(formId)) {
+    throw new ApiError(400, "Form ID is required and should be a valid ID");
   }
 
   const form = await Form.findById(formId);
@@ -119,58 +105,53 @@ export const updateForm = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Form not found");
   }
 
-  if (form.createdBy.toString() !== req.user?._id.toString()) {
+  if (form.createdBy.toString() !== req.user?._id.toString() && !req.user.isAdmin) {
     throw new ApiError(403, "You are not authorized to update this form");
   }
 
   const updatedForm = await Form.findByIdAndUpdate(
     formId,
     { title, description },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true }
   );
 
   if (!updatedForm) {
     throw new ApiError(404, "Form not found");
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, updatedForm, "Form updated successfully"));
+  return res.status(200).json(new ApiResponse(200, updatedForm, "Form updated successfully"));
 });
 
 export const getFormByDept = asyncHandler(async (req, res) => {
-  const department = req.user.department;
-  const userID = req.user._id;
+  const { department, academicYear, userID } = req.user;
 
   const [forms, feedbacks] = await Promise.all([
-    Form.find({ isPublished: true }).sort({ createdAt: -1 }).populate({
-      path: "createdBy",
-      select: "department fullName",
-    }),
-    Feedback.find({ userID }).select("formId"),
+    Form.find({ isPublished: true, academicYear }) // Filter by academicYear
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "createdBy",
+        select: "department fullName"
+      }),
+    Feedback.find({ userID }).select("formId")
   ]);
 
   if (!forms || forms.length === 0) {
     return res.status(200).json(new ApiResponse(200, [], "Success"));
   }
 
-  const submittedFormIDs = new Set(
-    feedbacks.map((feedback) => feedback.formId.toString()),
-  );
+  const submittedFormIDs = new Set(feedbacks.map((feedback) => feedback.formId.toString()));
 
   const formsWithSubmissionStatus = forms
     .filter(
-      (form) => form.createdBy && form.createdBy.department === department,
+      (form) => form.createdBy && form.createdBy.department === department // Match both department and academicYear
     )
     .map((form) => ({
       ...form._doc,
       submitted: submittedFormIDs.has(form._id.toString()),
-      createdBy: form.createdBy.fullName,
+      createdBy: form.createdBy.fullName
     }));
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, formsWithSubmissionStatus, "Success"));
+  return res.status(200).json(new ApiResponse(200, formsWithSubmissionStatus, "Success"));
 });
 
 export const togglePublish = asyncHandler(async (req, res) => {
@@ -195,16 +176,14 @@ export const togglePublish = asyncHandler(async (req, res) => {
   const updatedForm = await Form.findByIdAndUpdate(
     formId,
     { isPublished },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true }
   );
 
   if (!updatedForm) {
     throw new ApiError(500, "Something went wrong while updating the form");
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, updatedForm, "Form published successfully"));
+  return res.status(200).json(new ApiResponse(200, updatedForm, "Form published successfully"));
 });
 
 export const deleteForm = asyncHandler(async (req, res) => {
@@ -225,10 +204,7 @@ export const deleteForm = asyncHandler(async (req, res) => {
   const deleteResponses = await Feedback.deleteMany({ formId: form._id });
 
   if (!deleteQuestions || !deleteResponses) {
-    throw new ApiError(
-      500,
-      "Something went wrong while deleting questions and responses",
-    );
+    throw new ApiError(500, "Something went wrong while deleting questions and responses");
   }
 
   const deleteForm = await form.deleteOne();
@@ -240,11 +216,7 @@ export const deleteForm = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        { deleted: true },
-        "Form and related questions deleted successfully",
-      ),
+      new ApiResponse(200, { deleted: true }, "Form and related questions deleted successfully")
     );
 });
 
@@ -268,7 +240,7 @@ export const updateQuestion = asyncHandler(async (req, res) => {
     const updatedQuestion = await Question.findByIdAndUpdate(
       questionId,
       { question, options },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
 
     if (!updatedQuestion) {
@@ -277,9 +249,7 @@ export const updateQuestion = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(
-        new ApiResponse(200, updatedQuestion, "Question updated successfully"),
-      );
+      .json(new ApiResponse(200, updatedQuestion, "Question updated successfully"));
   } catch (error) {
     console.log(error);
     throw error;
@@ -311,11 +281,11 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
     const updatedForm = await Form.findByIdAndUpdate(
       formId,
       {
-        $pull: { questions: questionId },
+        $pull: { questions: questionId }
       },
       {
-        new: true,
-      },
+        new: true
+      }
     );
 
     if (!updatedForm) {
@@ -324,18 +294,49 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
 
     console.log("deleted question");
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, updatedForm, "Question deleted successfully"));
+    return res.status(200).json(new ApiResponse(200, updatedForm, "Question deleted successfully"));
   } catch (error) {
     console.log(error);
     throw error;
   }
 });
 
+// Area of improvement. Can req the academic year and then fetch the forms from that academic year only
+//TODO: add pagination here
 export const getAllForms = asyncHandler(async (req, res) => {
+  const { academicYear } = req.query;
+  const { page = 1, limit = 10 } = req.query;
+
+  if (academicYear && !isValidObjectId(academicYear)) {
+    throw new ApiError(400, "Invalid academic year ID");
+  }
+
+  if (academicYear) {
+    const forms = await Form.find({ academicYear }).sort({ createdAt: -1 });
+
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    };
+
+    const paginatedForms = await Form.aggregatePaginate(forms, options);
+    console.log("paginated forms ", paginatedForms);
+
+    if (!paginatedForms) {
+      throw new ApiError(404, "Forms not found");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          paginatedForms,
+          `All forms of ${academicYear} academic year retrieved successfully`
+        )
+      );
+  }
+
   const forms = await Form.find().sort({ createdAt: -1 });
-  return res
-    .status(200)
-    .json(new ApiResponse(200, forms, "All forms retrieved successfully"));
+  return res.status(200).json(new ApiResponse(200, forms, "All forms retrieved successfully"));
 });

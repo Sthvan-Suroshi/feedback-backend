@@ -5,17 +5,17 @@ import jwt from "jsonwebtoken";
 const userSchema = new mongoose.Schema({
   fullName: {
     type: String,
-    required: true,
+    required: true
   },
 
   email: {
     type: String,
-    required: true,
+    required: true
   },
 
   password: {
     type: String,
-    required: true,
+    required: true
   },
 
   college_id: {
@@ -29,26 +29,34 @@ const userSchema = new mongoose.Schema({
           /^INST(EC|CS|ME|CV|AI)\d{3}$/.test(v)
         );
       },
-      message: (props) => `${props.value} is not a valid code!`,
-    },
+      message: (props) => `${props.value} is not a valid code!`
+    }
   },
 
   department: {
     type: String,
     required: true,
-    enum: ["CSE", "ECE", "MECH", "CIVIL", "AIML", "ALL"],
+    enum: ["CSE", "ECE", "MECH", "CIVIL", "AIML", "ALL"]
   },
 
   accountType: {
     type: String,
     enum: ["student", "admin", "instructor"],
     default: "student",
-    required: true,
+    required: true
+  },
+
+  academicYear: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "AcademicYear",
+    required: function () {
+      return this.accountType === "student";
+    }
   },
 
   refreshToken: {
-    type: String,
-  },
+    type: String
+  }
 });
 
 userSchema.pre("save", async function (next) {
@@ -69,11 +77,12 @@ userSchema.methods.generateAccessToken = function () {
       email: this.email,
       accountType: this.accountType,
       department: this.department,
+      academicYear: this.academicYear
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
-    },
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+    }
   );
 };
 
@@ -83,12 +92,12 @@ userSchema.methods.generateRefreshToken = function () {
       _id: this._id,
       email: this.email,
       accountType: this.accountType,
-      department: this.department,
+      department: this.department
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-    },
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+    }
   );
 };
 

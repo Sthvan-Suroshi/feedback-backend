@@ -7,8 +7,8 @@ const app = express();
 app.use(
   cors({
     origin: "http://localhost:5173",
-    credentials: true,
-  }),
+    credentials: true
+  })
 );
 
 app.use(express.json());
@@ -20,11 +20,13 @@ app.use(cookieParser());
 import userRoutes from "./routes/user.routes.js";
 import imageRoutes from "./routes/imageFeedback.routes.js";
 import formRoutes from "./routes/form.routes.js";
-import feedbackRoutes from "./routes/feedback.routes.js"
+import feedbackRoutes from "./routes/feedback.routes.js";
+import academicRoutes from "./routes/academicYear.routes.js";
 //route declaration
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/imageFeedbacks", imageRoutes);
 app.use("/api/v1/forms", formRoutes);
 app.use("/api/v1/feedbacks", feedbackRoutes);
+app.use("/api/v1/academic", academicRoutes);
 
 export { app };

@@ -1,39 +1,48 @@
 import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const feedbackFormSchema = new mongoose.Schema(
   {
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: true
     },
 
     title: {
       type: String,
       required: true,
-      trim: true,
+      trim: true
     },
 
     description: {
       type: String,
-      maxlength: 500,
+      maxlength: 500
     },
 
     questions: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Question",
-      },
+        ref: "Question"
+      }
     ],
+
+    academicYear: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AcademicYear",
+      required: true
+    },
 
     isPublished: {
       type: Boolean,
-      default: false,
-    },
+      default: false
+    }
   },
   {
-    timestamps: true,
-  },
+    timestamps: true
+  }
 );
+
+feedbackFormSchema.plugin(mongooseAggregatePaginate);
 
 export const Form = mongoose.model("Form", feedbackFormSchema);

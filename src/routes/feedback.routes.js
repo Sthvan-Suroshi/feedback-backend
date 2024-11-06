@@ -1,13 +1,9 @@
 import { Router } from "express";
-import {
-  isInstructor,
-  isStudent,
-  verifyJWT,
-} from "../middlewares/auth.middlewares.js";
+import { isStudent, verifyJWT } from "../middlewares/auth.middlewares.js";
 import {
   checkFeedbackSubmission,
   createFeedback,
-  getAllFeedbacksToForm,
+  getAllFeedbacksToForm
 } from "../controllers/feedback.controller.js";
 
 const router = Router();

@@ -96,32 +96,44 @@ export const editImageFeedback = asyncHandler(async (req, res) => {
 });
 
 export const deleteImageFeedback = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params; // Document ID
+  const { imageUrlToDelete } = req.body; // Single image URL to delete
+
   if (!isValidObjectId(id)) {
-    throw new ApiError(400, "Invalid id");
+    throw new ApiError(400, "Invalid ID");
   }
 
   const imageResponse = await ImageFeedback.findById(id);
 
   if (!imageResponse) {
-    throw new ApiError(500, "Something went wrong while fetching the response");
+    throw new ApiError(404, "Feedback entry not found");
   }
 
-  const deletefromCloud = await deleteFromCloudinary(imageResponse.imageUrl, "image");
-
-  if (!deletefromCloud) {
-    throw new ApiError("Something went wrong while deleting from cloudinary");
+  // Check if the image URL exists in the document
+  if (!imageResponse.imageUrls.includes(imageUrlToDelete)) {
+    throw new ApiError(400, "Image URL not found in this feedback entry");
   }
 
-  await ImageFeedback.findByIdAndDelete(id);
+  // Use the $pull operator to remove the image URL from the array
+  await ImageFeedback.findByIdAndUpdate(
+    id,
+    { $pull: { imageUrls: imageUrlToDelete } },
+    { new: true }
+  );
+
+  // Delete the image from Cloudinary after the image URL is removed from the document
+  const deleteResult = await deleteFromCloudinary(imageUrlToDelete, "image");
+  if (!deleteResult) {
+    throw new ApiError(500, "Error deleting the image from Cloudinary");
+  }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, { deleted: true }, "Successfully deleted the response"));
+    .json(new ApiResponse(200, null, "Successfully deleted the specified image"));
 });
 
 export const getImageResponse = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params; //Send the Document ID here from the frontend
 
   if (!isValidObjectId(id)) {
     throw new ApiError(400, "Invalid id");
@@ -139,24 +151,64 @@ export const getImageResponse = asyncHandler(async (req, res) => {
 });
 
 export const getAllUserImageResponses = asyncHandler(async (req, res) => {
-  const imageResponses = await ImageFeedback.find({
-    userID: req.user._id
-  }).sort({ createdAt: -1 });
+  const { page = 1, limit = 10 } = req.query;
 
-  if (!imageResponses) {
-    throw new ApiError(500, "Something went wrong while fetching your image response");
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10)
+  };
+
+  const aggregation = [{ $match: { userID: req.user?._id } }, { $sort: { createdAt: -1 } }];
+
+  const paginatedResponses = await ImageFeedback.aggregatePaginate(aggregation, options);
+
+  if (!paginatedResponses || paginatedResponses.docs.length === 0) {
+    throw new ApiError(404, "No image responses found");
   }
-  return res.status(200).json(new ApiResponse(200, imageResponses, "Success"));
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        imageResponses: paginatedResponses.docs,
+        totalResponses: paginatedResponses.totalDocs, // Total documents count for pagination
+        page: paginatedResponses.page,
+        limit: paginatedResponses.limit
+      },
+      "Success"
+    )
+  );
 });
 
 export const getAllImageResponses = asyncHandler(async (req, res) => {
-  const imageResponses = await ImageFeedback.find().sort({ createdAt: -1 });
+  const { page = 1, limit = 10 } = req.query;
 
-  if (!imageResponses) {
-    throw new ApiError(500, "Something went wrong while fetching all image response");
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10)
+  };
+
+  const aggregation = [
+    { $sort: { createdAt: -1 } } // Sort by createdAt in descending order
+  ];
+
+  // Apply pagination using aggregatePaginate
+  const paginatedResponses = await ImageFeedback.aggregatePaginate(aggregation, options);
+
+  if (!paginatedResponses || paginatedResponses.docs.length === 0) {
+    throw new ApiError(404, "No image responses found");
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, imageResponses, "Successfully fetched all image responses"));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        imageResponses: paginatedResponses.docs, // Paginated results
+        totalResponses: paginatedResponses.totalDocs, // Total documents count for pagination
+        page: paginatedResponses.page,
+        limit: paginatedResponses.limit
+      },
+      "Successfully fetched all image responses"
+    )
+  );
 });

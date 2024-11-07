@@ -124,34 +124,49 @@ export const updateForm = asyncHandler(async (req, res) => {
 
 export const getFormByDept = asyncHandler(async (req, res) => {
   const { department, academicYear, userID } = req.user;
+  const { page = 1, limit = 10 } = req.query;
+
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10)
+  };
 
   const [forms, feedbacks] = await Promise.all([
-    Form.find({ isPublished: true, academicYear }) // Filter by academicYear
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "createdBy",
-        select: "department fullName"
-      }),
+    Form.find({ isPublished: true, academicYear }).sort({ createdAt: -1 }).populate({
+      path: "createdBy",
+      select: "department fullName"
+    }),
     Feedback.find({ userID }).select("formId")
   ]);
 
   if (!forms || forms.length === 0) {
-    return res.status(200).json(new ApiResponse(200, [], "Success"));
+    return res.status(200).json(new ApiResponse(200, [], "No forms found"));
   }
 
   const submittedFormIDs = new Set(feedbacks.map((feedback) => feedback.formId.toString()));
 
-  const formsWithSubmissionStatus = forms
-    .filter(
-      (form) => form.createdBy && form.createdBy.department === department // Match both department and academicYear
-    )
+  // Filter and map to add submission status and createdBy data
+  const filteredForms = forms
+    .filter((form) => form.createdBy && form.createdBy.department === department)
     .map((form) => ({
       ...form._doc,
       submitted: submittedFormIDs.has(form._id.toString()),
       createdBy: form.createdBy.fullName
     }));
 
-  return res.status(200).json(new ApiResponse(200, formsWithSubmissionStatus, "Success"));
+  // Apply pagination to filtered forms
+  const startIndex = (options.page - 1) * options.limit;
+  const paginatedForms = filteredForms.slice(startIndex, startIndex + options.limit);
+
+  // Construct paginated response
+  const response = {
+    forms: paginatedForms,
+    totalForms: filteredForms.length,
+    page: options.page,
+    limit: options.limit
+  };
+
+  return res.status(200).json(new ApiResponse(200, response, "Success"));
 });
 
 export const togglePublish = asyncHandler(async (req, res) => {
@@ -301,42 +316,43 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
   }
 });
 
-// Area of improvement. Can req the academic year and then fetch the forms from that academic year only
-//TODO: add pagination here
 export const getAllForms = asyncHandler(async (req, res) => {
-  const { academicYear } = req.query;
-  const { page = 1, limit = 10 } = req.query;
+  const { academicYear, page = 1, limit = 10 } = req.query;
 
   if (academicYear && !isValidObjectId(academicYear)) {
     throw new ApiError(400, "Invalid academic year ID");
   }
 
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10)
+  };
+
+  let aggregation = [{ $sort: { createdAt: -1 } }]; // Default aggregation for sorting
+
+  // If academicYear is provided, add a match stage to filter by academicYear
   if (academicYear) {
-    const forms = await Form.find({ academicYear }).sort({ createdAt: -1 });
-
-    const options = {
-      page: parseInt(page),
-      limit: parseInt(limit)
-    };
-
-    const paginatedForms = await Form.aggregatePaginate(forms, options);
-    console.log("paginated forms ", paginatedForms);
-
-    if (!paginatedForms) {
-      throw new ApiError(404, "Forms not found");
-    }
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          paginatedForms,
-          `All forms of ${academicYear} academic year retrieved successfully`
-        )
-      );
+    aggregation.unshift({ $match: { academicYear } });
   }
 
-  const forms = await Form.find().sort({ createdAt: -1 });
-  return res.status(200).json(new ApiResponse(200, forms, "All forms retrieved successfully"));
+  const paginatedForms = await Form.aggregatePaginate(aggregation, options);
+
+  if (!paginatedForms || paginatedForms.docs.length === 0) {
+    throw new ApiError(404, "Forms not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        forms: paginatedForms.docs,
+        totalForms: paginatedForms.totalDocs, // Total number of forms available
+        page: paginatedForms.page, // Current page
+        limit: paginatedForms.limit // Items per page
+      },
+      academicYear
+        ? `All forms of ${academicYear} academic year retrieved successfully`
+        : "All forms retrieved successfully"
+    )
+  );
 });

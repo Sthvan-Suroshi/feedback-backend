@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const imageFeedbackSchema = new mongoose.Schema(
   {
@@ -25,5 +26,7 @@ const imageFeedbackSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+imageFeedbackSchema.plugin(mongooseAggregatePaginate);
 
 export const ImageFeedback = mongoose.model("ImageFeedback", imageFeedbackSchema);

@@ -9,7 +9,7 @@ import { Feedback } from "../models/feedback.models.js";
 export const createForm = asyncHandler(async (req, res) => {
   const { title, description, questions, academicYear, department } = req.body;
 
-  if (!title || !description || academicYear || department) {
+  if (!title || !description || !academicYear || !department) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -51,7 +51,7 @@ export const createForm = asyncHandler(async (req, res) => {
       throw new ApiError(500, "Something went wrong while updating the form with questions");
     }
 
-    return res.status(200).json(new ApiResponse(200, updatedForm, "Success"));
+    return res.status(200).json(new ApiResponse(200, null, "Successfully created the form"));
   } catch (error) {
     console.log(error);
     throw error;
@@ -64,10 +64,18 @@ export const getFormDetails = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Form ID is required");
   }
 
-  const form = await Form.findById(formId).populate({
-    path: "questions",
-    select: "_id formId question options description"
-  });
+  const form = await Form.findById(formId)
+    .populate({
+      path: "questions",
+      select: "_id question options description"
+    })
+    .populate({
+      path: "academicYear",
+      select: "year -_id"
+    })
+    .select(
+      "_id createdBy title description questions academicYear department isPublished createdAt updatedAt"
+    );
 
   if (!form) {
     throw new ApiError(404, "Form not found");
@@ -121,7 +129,7 @@ export const updateForm = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Form not found");
   }
 
-  return res.status(200).json(new ApiResponse(200, updatedForm, "Form updated successfully"));
+  return res.status(200).json(new ApiResponse(200, {}, "Form updated successfully"));
 });
 
 export const updateQuestion = asyncHandler(async (req, res) => {
@@ -199,7 +207,7 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
 });
 
 export const getFormByDept = asyncHandler(async (req, res) => {
-  const { department, academicYear, userID } = req.user;
+  const { department, academicYear, _id: userID } = req.user;
   const { page = 1, limit = 10 } = req.query;
 
   const options = {

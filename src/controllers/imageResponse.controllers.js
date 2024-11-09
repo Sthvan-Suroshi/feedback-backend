@@ -29,11 +29,10 @@ export const createImageFeedback = asyncHandler(async (req, res) => {
     })
   );
 
-  // Create a single ImageFeedback document with all image URLs
   const imageResponse = await ImageFeedback.create({
     title,
     description,
-    imageUrls, // Store the array of URLs here
+    imageUrls,
     userID: req.user._id
   });
 
@@ -61,9 +60,7 @@ export const editImageFeedback = asyncHandler(async (req, res) => {
   if (title) updateDetails.title = title;
   if (description) updateDetails.description = description;
 
-  // Manage images only if new images are provided
   if (req.files && req.files.length > 0) {
-    // Upload new images to Cloudinary and collect their URLs
     const newImageUrls = await Promise.all(
       req.files.map(async (file) => {
         const newImageUrl = await uploadOnCloudinary(file.path);
@@ -74,7 +71,6 @@ export const editImageFeedback = asyncHandler(async (req, res) => {
       })
     );
 
-    // Optional: Remove old images if being replaced
     if (existingFeedback.imageUrls && existingFeedback.imageUrls.length > 0) {
       await Promise.all(
         existingFeedback.imageUrls.map(async (url) => {

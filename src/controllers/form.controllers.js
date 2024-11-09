@@ -7,9 +7,9 @@ import { Question } from "../models/question.models.js";
 import { Feedback } from "../models/feedback.models.js";
 
 export const createForm = asyncHandler(async (req, res) => {
-  const { title, description, questions, academicYear } = req.body;
+  const { title, description, questions, academicYear, department } = req.body;
 
-  if (!title || !description || academicYear) {
+  if (!title || !description || academicYear || department) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -18,6 +18,7 @@ export const createForm = asyncHandler(async (req, res) => {
       createdBy: req.user?._id,
       title,
       description,
+      department,
       academicYear
     });
 
@@ -81,6 +82,7 @@ export const getAllFormsCreatedByUser = asyncHandler(async (req, res) => {
   const forms = await Form.find({ createdBy: req.user?._id }).sort({
     createdAt: -1
   });
+
   if (!forms) {
     throw new ApiError(404, "Forms not found");
   }
@@ -122,6 +124,80 @@ export const updateForm = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, updatedForm, "Form updated successfully"));
 });
 
+export const updateQuestion = asyncHandler(async (req, res) => {
+  const { questionId } = req.params;
+  const { question, options } = req.body;
+
+  if (!question) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  if (!questionId) {
+    throw new ApiError(400, "Question ID is required");
+  }
+
+  if (!isValidObjectId(questionId)) {
+    throw new ApiError(400, "Invalid question ID");
+  }
+
+  try {
+    const updatedQuestion = await Question.findByIdAndUpdate(
+      questionId,
+      { question, options },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedQuestion) {
+      throw new ApiError(404, "Question not found");
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedQuestion, "Question updated successfully"));
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+});
+
+export const deleteQuestion = asyncHandler(async (req, res) => {
+  const { questionId } = req.params;
+  console.log(questionId);
+
+  if (!questionId) {
+    throw new ApiError(400, "Question ID is required");
+  }
+
+  if (!isValidObjectId(questionId)) {
+    throw new ApiError(400, "Invalid question ID");
+  }
+
+  const question = await Question.findById(questionId);
+  if (!question) {
+    throw new ApiError(404, "Question not found");
+  }
+
+  const formId = question.formId;
+
+  await Question.findByIdAndDelete(questionId);
+
+  const updatedForm = await Form.findByIdAndUpdate(
+    formId,
+    {
+      $pull: { questions: questionId }
+    },
+    {
+      new: true
+    }
+  );
+
+  if (!updatedForm) {
+    throw new ApiError(500, "Something went wrong while updating the form");
+  }
+
+  return res.status(200).json(new ApiResponse(200, updatedForm, "Question deleted successfully"));
+});
+
 export const getFormByDept = asyncHandler(async (req, res) => {
   const { department, academicYear, userID } = req.user;
   const { page = 1, limit = 10 } = req.query;
@@ -131,37 +207,39 @@ export const getFormByDept = asyncHandler(async (req, res) => {
     limit: parseInt(limit, 10)
   };
 
-  const [forms, feedbacks] = await Promise.all([
-    Form.find({ isPublished: true, academicYear }).sort({ createdAt: -1 }).populate({
-      path: "createdBy",
-      select: "department fullName"
-    }),
-    Feedback.find({ userID }).select("formId")
+  const [forms, submittedFormIDs] = await Promise.all([
+    Form.find({ isPublished: true, academicYear, department })
+      .sort({ createdAt: -1 })
+      .skip((options.page - 1) * options.limit)
+      .limit(options.limit)
+      .populate({
+        path: "createdBy",
+        select: "fullName"
+      })
+      .lean(),
+    Feedback.find({ userID }).distinct("formId")
   ]);
 
   if (!forms || forms.length === 0) {
     return res.status(200).json(new ApiResponse(200, [], "No forms found"));
   }
 
-  const submittedFormIDs = new Set(feedbacks.map((feedback) => feedback.formId.toString()));
+  // Set of submitted form IDs for quick lookup
+  const submittedFormSet = new Set(submittedFormIDs.map((id) => id.toString()));
 
-  // Filter and map to add submission status and createdBy data
-  const filteredForms = forms
-    .filter((form) => form.createdBy && form.createdBy.department === department)
-    .map((form) => ({
-      ...form._doc,
-      submitted: submittedFormIDs.has(form._id.toString()),
-      createdBy: form.createdBy.fullName
-    }));
+  // Map to add submission status and createdBy data
+  const formattedForms = forms.map((form) => ({
+    ...form,
+    submitted: submittedFormSet.has(form._id.toString()),
+    createdBy: form.createdBy ? form.createdBy.fullName : "Unknown"
+  }));
 
-  // Apply pagination to filtered forms
-  const startIndex = (options.page - 1) * options.limit;
-  const paginatedForms = filteredForms.slice(startIndex, startIndex + options.limit);
+  // Count total forms that match the criteria for pagination
+  const totalForms = await Form.countDocuments({ isPublished: true, academicYear, department });
 
-  // Construct paginated response
   const response = {
-    forms: paginatedForms,
-    totalForms: filteredForms.length,
+    forms: formattedForms,
+    totalForms,
     page: options.page,
     limit: options.limit
   };
@@ -233,87 +311,6 @@ export const deleteForm = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, { deleted: true }, "Form and related questions deleted successfully")
     );
-});
-
-export const updateQuestion = asyncHandler(async (req, res) => {
-  const { questionId } = req.params;
-  const { question, options } = req.body;
-
-  if (!question) {
-    throw new ApiError(400, "All fields are required");
-  }
-
-  if (!questionId) {
-    throw new ApiError(400, "Question ID is required");
-  }
-
-  if (!isValidObjectId(questionId)) {
-    throw new ApiError(400, "Invalid question ID");
-  }
-
-  try {
-    const updatedQuestion = await Question.findByIdAndUpdate(
-      questionId,
-      { question, options },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedQuestion) {
-      throw new ApiError(404, "Question not found");
-    }
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, updatedQuestion, "Question updated successfully"));
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
-});
-
-export const deleteQuestion = asyncHandler(async (req, res) => {
-  const { questionId } = req.params;
-  console.log(questionId);
-
-  if (!questionId) {
-    throw new ApiError(400, "Question ID is required");
-  }
-
-  if (!isValidObjectId(questionId)) {
-    throw new ApiError(400, "Invalid question ID");
-  }
-
-  try {
-    const question = await Question.findById(questionId);
-    if (!question) {
-      throw new ApiError(404, "Question not found");
-    }
-
-    const formId = question.formId;
-
-    await Question.findByIdAndDelete(questionId);
-
-    const updatedForm = await Form.findByIdAndUpdate(
-      formId,
-      {
-        $pull: { questions: questionId }
-      },
-      {
-        new: true
-      }
-    );
-
-    if (!updatedForm) {
-      throw new ApiError(500, "Something went wrong while updating the form");
-    }
-
-    console.log("deleted question");
-
-    return res.status(200).json(new ApiResponse(200, updatedForm, "Question deleted successfully"));
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
 });
 
 export const getAllForms = asyncHandler(async (req, res) => {

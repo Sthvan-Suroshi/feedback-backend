@@ -33,6 +33,12 @@ const feedbackFormSchema = new mongoose.Schema(
       required: true
     },
 
+    department: {
+      type: String,
+      enum: ["CSE", "ECE", "MECH", "CIVIL", "AIML", "ALL"],
+      required: true
+    },
+
     isPublished: {
       type: Boolean,
       default: false

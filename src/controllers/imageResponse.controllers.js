@@ -10,8 +10,6 @@ import { isValidObjectId } from "mongoose";
 
 export const createImageFeedback = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
-  console.log(title);
-  console.log(description);
 
   if (!title || !description) {
     throw new ApiError(400, "All fields are required");
@@ -19,14 +17,11 @@ export const createImageFeedback = asyncHandler(async (req, res) => {
 
   const imageLocalPath = req.file?.path;
 
-  console.log(imageLocalPath);
-
   if (!imageLocalPath) {
     throw new ApiError(400, "Image not found");
   }
 
   const imageUrl = await uploadOnCloudinary(imageLocalPath);
-  console.log(imageUrl);
 
   if (!imageUrl) {
     throw new ApiError(
@@ -54,8 +49,6 @@ export const createImageFeedback = asyncHandler(async (req, res) => {
 export const editImageFeedback = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   const { id } = req.params;
-
-  console.log(title, description);
 
   if (!isValidObjectId(id)) {
     throw new ApiError(400, "Invalid id");
@@ -134,6 +127,8 @@ export const deleteImageFeedback = asyncHandler(async (req, res) => {
     imageResponse.imageUrl,
     "image",
   );
+
+  console.log("delete from cloud ", deletefromCloud);
 
   if (!deletefromCloud) {
     throw new ApiError("Something went wrong while deleting from cloudinary");

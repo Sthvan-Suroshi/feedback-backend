@@ -288,7 +288,6 @@ export const updateQuestion = asyncHandler(async (req, res) => {
 
 export const deleteQuestion = asyncHandler(async (req, res) => {
   const { questionId } = req.params;
-  console.log(questionId);
 
   if (!questionId) {
     throw new ApiError(400, "Question ID is required");
@@ -321,8 +320,6 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
     if (!updatedForm) {
       throw new ApiError(500, "Something went wrong while updating the form");
     }
-
-    console.log("deleted question");
 
     return res
       .status(200)

@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
     validate: {
       validator: function (v) {
         return (
-          /^2JR21(EC|CS|ME|CV|AI)\d{3}$/.test(v) ||
+          /^2JR2\d{1}(EC|CS|ME|CV|AI)\d{3}$/.test(v) ||
           /^JCER\d{3}$/.test(v) ||
           /^INST(EC|CS|ME|CV|AI)\d{3}$/.test(v)
         );

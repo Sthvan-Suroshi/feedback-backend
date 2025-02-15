@@ -128,8 +128,6 @@ export const deleteImageFeedback = asyncHandler(async (req, res) => {
     "image",
   );
 
-  console.log("delete from cloud ", deletefromCloud);
-
   if (!deletefromCloud) {
     throw new ApiError("Something went wrong while deleting from cloudinary");
   }

@@ -31,9 +31,7 @@ const feedbackFormSchema = new mongoose.Schema(
       default: false,
     },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
 export const Form = mongoose.model("Form", feedbackFormSchema);

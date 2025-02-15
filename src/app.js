@@ -6,7 +6,10 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin:
+      process.env.CORS_ORIGIN ||
+      "http://localhost:5173" ||
+      "http://localhost:5174",
     credentials: true,
   }),
 );
@@ -15,6 +18,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
+
+//health check route
+app.get("/health", async (_, res) => {
+  console.log("The server is healthy ");
+  res.status(200).send("OK");
+});
 
 //importing routes
 import userRoutes from "./routes/user.routes.js";
